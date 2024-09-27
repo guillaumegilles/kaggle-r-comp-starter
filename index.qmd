@@ -10,3 +10,28 @@ bibliography: references.bib
 
 ## Section
 This is a simple placeholder for the manuscript's main document [@knuth84].
+
+
+## Problematic Internet Use - Child Mind Institute
+
+In today’s digital age, problematic internet use among children and adolescents is a growing concern. Better understanding this issue is crucial for addressing mental health problems such as depression and anxiety.
+
+This [Kaggle competition](https://www.kaggle.com/competitions/child-mind-institute-problematic-internet-use) challenges you to develop a predictive model capable of **analyzing children's physical activity data** throughout physical fitness indicators as proxies to detect early indicators of problematic internet and technology use.
+
+## Data
+
+The data used for this competition was provided by the [Healthy Brain Network](https://healthybrainnetwork.org/), a landmark mental health study based in New York City that will help children around the world. In the Healthy Brain Network, families, community leaders, and supporters are partnering with the Child Mind Institute to unlock the secrets of the developing brain. In addition to the generous support provided by the Kaggle team, financial support has been provided by the California Department of Health Care Services (DHCS) as part of the Children and Youth Behavioral Health Initiative (CYBHI).
+
+The competition data is compiled into **two sources**, `parquet` files containing the accelerometer (actigraphy) series and `csv` files containing the remaining tabular data.
+
+The majority of measures are missing for most participants. In particular, the target `sii` is missing for a portion of the participants in the training set. You may wish to apply non-supervised learning techniques to this data. The `sii` value is present for all instances in the test set.
+
+### Target $Y$
+
+The goal of this competition is to predict from this data a participant's **S**everity **I**mpairment **I**ndex (`sii`), a standard measure of problematic internet use.
+
+`sii` is derived from this field as described in the data dictionary:
+  - `0` for None,
+  - `1` for Mild,
+  - `2` for Moderate,
+  - and `3` for Severe.
