@@ -1,15 +1,12 @@
 ---
 title: problematic-internet-use
-authors:
-  - name: Norah Jones
-    affiliation: The University
-    roles: writing
-    corresponding: true
 bibliography: references.bib
 ---
 
-## Section
-This is a simple placeholder for the manuscript's main document [@knuth84].
+## Reading List 
+
+- [Code performance in R: Which part of the code is slow?](https://www.inwt-statistics.com/blog/code-performance-in-r-which-part-of-your-code-is-slow)
+- [Multivariate Imputation by Chained Equations](https://amices.org/mice/)
 
 
 ## Problematic Internet Use - Child Mind Institute
