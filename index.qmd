@@ -2,33 +2,115 @@
 title: problematic-internet-use
 bibliography: references.bib
 ---
-
+  
 ## Reading List 
-
+ 
 - [Code performance in R: Which part of the code is slow?](https://www.inwt-statistics.com/blog/code-performance-in-r-which-part-of-your-code-is-slow)
 - [Multivariate Imputation by Chained Equations](https://amices.org/mice/)
 
+## Info
+- Test Set: 20 x 59 (columns)
+- Train Set: 3960 x 82 (columns)
+   - Target: `sii`
+      - 0 for None
+      - 1 for Mild
+      - 2 for Moderate
+      - and 3 for Severe
 
 ## Problematic Internet Use - Child Mind Institute
-
+  
 In today’s digital age, problematic internet use among children and adolescents is a growing concern. Better understanding this issue is crucial for addressing mental health problems such as depression and anxiety.
-
+  
 This [Kaggle competition](https://www.kaggle.com/competitions/child-mind-institute-problematic-internet-use) challenges you to develop a predictive model capable of **analyzing children's physical activity data** throughout physical fitness indicators as proxies to detect early indicators of problematic internet and technology use.
-
+  
 ## Data
-
+  
 The data used for this competition was provided by the [Healthy Brain Network](https://healthybrainnetwork.org/), a landmark mental health study based in New York City that will help children around the world. In the Healthy Brain Network, families, community leaders, and supporters are partnering with the Child Mind Institute to unlock the secrets of the developing brain. In addition to the generous support provided by the Kaggle team, financial support has been provided by the California Department of Health Care Services (DHCS) as part of the Children and Youth Behavioral Health Initiative (CYBHI).
-
+  
 The competition data is compiled into **two sources**, `parquet` files containing the accelerometer (actigraphy) series and `csv` files containing the remaining tabular data.
-
+  
 The majority of measures are missing for most participants. In particular, the target `sii` is missing for a portion of the participants in the training set. You may wish to apply non-supervised learning techniques to this data. The `sii` value is present for all instances in the test set.
-
+  
 ### Target $Y$
-
+  
 The goal of this competition is to predict from this data a participant's **S**everity **I**mpairment **I**ndex (`sii`), a standard measure of problematic internet use.
-
+  
 `sii` is derived from this field as described in the data dictionary:
   - `0` for None,
   - `1` for Mild,
   - `2` for Moderate,
   - and `3` for Severe.
+
+
+```{r}
+# Quarto R setup chunck by Julia Silge (https://www.youtube.com/watch?v=5BojM5EciPs)
+
+library(knitr)
+knitr::opts_chunk$set(
+    cache = TRUE,
+    cache.lazy = FALSE,
+    warning = FALSE,
+    message =  FALSE,
+    echo = TRUE,
+    dpi = 180,
+    fig.width = 8,
+    fig.height = 5
+)
+library(tidyverse)
+theme_set(theme_minimal())
+update_geom_defaults("rect", list(fill = "midnightblue", alpha = 0.8))
+update_geom_defaults("line", list(color = "midnightblue", alpha = 0.8))
+update_geom_defaults("point", list(color = "midnightblue", alpha = 0.8))
+```
+
+```{r}
+test <- read_csv("dataset/test.csv")
+train <- read_csv("dataset/train.csv")
+```
+
+```{r}
+train |>
+  count(sii)
+```
+
+```{r}
+# What are different number of features in train and test set?
+# there 23 different feature:
+#   1. 22 Parent-Child Internet Addiction Test (PCIAT) features
+#   2. the target, sii
+
+# removing PCIAT features
+train_less_pciat <- glimpse(train |>
+  select(!starts_with('PCIAT')))
+```
+
+```{r}
+# Vector of categorial features
+categorial_features <- c("FGC-FGC_CU_Zone", "FGC-FGC_GSND_Zone", "FGC-FGC_GSD_Zone",
+                         "FGC-FGC_PU_Zone", "FGC-FGC_SRL_Zone", "FGC-FGC_SRR_Zone",
+                         "FGC-FGC_TL_Zone", "BIA-BIA_Activity_Level_num", "BIA-BIA_Frame_num",
+                         "PreInt_EduHx-computerinternet_hoursday", "sii")
+```
+
+
+```{r}
+# Converting features into factor
+train_factored <- train_less_pciat |>
+  mutate_if(is.character, as.factor) |>
+  mutate(across(categorial_features, as.factor))
+glimpse(train_factored)
+```
+
+
+```{r}
+train_factored %>%
+  ggplot(aes(sii, "SDS-SDS_Total_T")) +
+  geom_col()
+```
+
+## Baseline
+
+1. removing na columns inside train set
+2. use ranger package for random forest
+
+## Submission
