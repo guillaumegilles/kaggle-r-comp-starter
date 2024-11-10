@@ -1,6 +1,6 @@
 ---
 title: problematic-internet-use
-bibliography: references.bib
+#bibliography: references.bib
 ---
   
 ## Reading List 
@@ -44,6 +44,9 @@ The goal of this competition is to predict from this data a participant's **S**e
 
 ```{r}
 # Quarto R setup chunck by Julia Silge (https://www.youtube.com/watch?v=5BojM5EciPs)
+library(tidyverse)
+library(tidymodels)
+library(ranger)
 
 library(knitr)
 knitr::opts_chunk$set(
@@ -56,7 +59,7 @@ knitr::opts_chunk$set(
     fig.width = 8,
     fig.height = 5
 )
-library(tidyverse)
+
 theme_set(theme_minimal())
 update_geom_defaults("rect", list(fill = "midnightblue", alpha = 0.8))
 update_geom_defaults("line", list(color = "midnightblue", alpha = 0.8))
@@ -64,8 +67,8 @@ update_geom_defaults("point", list(color = "midnightblue", alpha = 0.8))
 ```
 
 ```{r}
-test <- read_csv("dataset/test.csv")
-train <- read_csv("dataset/train.csv")
+valid <- read_csv("/kaggle/input/child-mind-institute-problematic-internet-use/test.csv")
+train <- read_csv("/kaggle/input/child-mind-institute-problematic-internet-use/train.csv")
 ```
 
 ```{r}
@@ -73,6 +76,9 @@ train |>
   count(sii)
 ```
 
+```{r}
+sum(is.na(train$sii))
+```
 ```{r}
 # What are different number of features in train and test set?
 # there 23 different feature:
@@ -99,6 +105,7 @@ train_factored <- train_less_pciat |>
   mutate_if(is.character, as.factor) |>
   mutate(across(categorial_features, as.factor))
 glimpse(train_factored)
+train <- train_factored
 ```
 
 
@@ -108,9 +115,102 @@ train_factored %>%
   geom_col()
 ```
 
+### Data visualization
+#### Demographics
+##### Sexe
+##### Age distribution
+#### Target distribution
+
 ## Baseline
 
-1. removing na columns inside train set
-2. use ranger package for random forest
+```{r}
+train_split <- train %>%
+  drop_na(sii) %>%
+  initial_split()
+
+training_data <- training(train_split)
+testing_data <- testing(train_split)
+```
+
+```{r}
+# Define the random forest model
+rf_model <- rand_forest(trees = 100, mtry = 3, min_n = 5) %>%
+  set_engine("ranger") %>%
+  set_mode("classification")  # Change to "regression" if predicting continuous values
+```
+
+```{r}
+# Create a recipe
+rf_recipe <- recipe(sii ~ ., data = training_data) %>%
+  step_impute_mean(all_numeric_predictors()) %>%       # Mean Imputation
+  step_impute_mode(all_nominal_predictors()) %>%       # Mode Imputation
+  step_normalize(all_numeric_predictors())             # Normalize numeric predictors if needed 
+```
+
+```{r}
+# Create a workflow
+rf_workflow <- workflow() %>%
+  add_recipe(rf_recipe) %>%
+  add_model(rf_model)
+```
+
+```{r}
+# Fit the model
+rf_fit <- rf_workflow %>%
+  fit(data = training_data)
+```
+
+```{r}
+# Make predictions
+predictions <- rf_fit %>%
+  predict(new_data = testing_data) %>%
+  bind_cols(testing_data)
+```
+
+```{r}
+# Evaluate performance
+metrics <- metrics(predictions, truth = sii, estimate = .pred_class)  # Change .pred_class to the appropriate column name
+print(metrics)
+```
+
+```{r}
+qwk <- kap(predictions, truth = sii, estimate = .pred_class, weighting = "quadratic")
+qwk
+```
 
 ## Submission
+
+```{r}
+## Submission
+# need to bind valid$id + prediction on valid_set
+
+# Preparing valid dataset for prediction
+
+valid <- read_csv("/kaggle/input/child-mind-institute-problematic-internet-use/test.csv")
+
+valid_less_pciat <- glimpse(valid |>
+  select(!starts_with('PCIAT')))
+
+categorial_features <- c("FGC-FGC_CU_Zone", "FGC-FGC_GSND_Zone", "FGC-FGC_GSD_Zone",
+                         "FGC-FGC_PU_Zone", "FGC-FGC_SRL_Zone", "FGC-FGC_SRR_Zone",
+                         "FGC-FGC_TL_Zone", "BIA-BIA_Activity_Level_num", "BIA-BIA_Frame_num",
+                         "PreInt_EduHx-computerinternet_hoursday")
+
+valid <- valid_less_pciat |>
+  mutate_if(is.character, as.factor) |>
+  mutate(across(categorial_features, as.factor))
+
+# Creating a submission.csv
+
+submission <- rf_fit %>%
+  predict(new_data = valid) %>%
+  bind_cols(valid) %>%
+  select(id, .pred_class)  # Replace .pred_class with the name of the prediction column if needed
+
+# Rename the prediction column to match the competition's requirements
+colnames(submission) <- c("id", "sii")
+
+write_csv(submission, "submission.csv")
+
+# 0.225 = top 95%
+```
