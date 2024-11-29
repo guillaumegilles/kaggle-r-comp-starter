@@ -1,6 +1,6 @@
 # Child Mind Institute — Problematic Internet Use
 
-![time serie](header.png)
+![time serie](assets/header.png)
 
 This GitHub repo is home to my personal work on a [Kaggle competition: Problematic Internet Use](https://www.kaggle.com/competitions/child-mind-institute-problematic-internet-use/overview).
 
