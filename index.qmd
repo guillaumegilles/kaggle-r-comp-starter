@@ -1,216 +1,232 @@
 ---
-title: problematic-internet-use
-#bibliography: references.bib
+title: Kaggle R Comp Template
+abstract: >-
+
+authors: 
+  - name: Guillaume Gilles
+    orcid: 0009-0000-7940-9359
+    email: guillaumegilles@me.com
+bibliography: assets/references.bib
+citation-location: margin
+image: assets/header.png
+date: 2024-09-19
+date-modified: 2024-11-21
+categories:
+  - Kaggle
+  - Machine Learning
+  - R
+format: 
+  html: 
+    toc: true
+    toc-depth: 3
+draft: true
 ---
-  
-## Reading List 
- 
-- [Code performance in R: Which part of the code is slow?](https://www.inwt-statistics.com/blog/code-performance-in-r-which-part-of-your-code-is-slow)
-- [Multivariate Imputation by Chained Equations](https://amices.org/mice/)
 
-## Info
-- Test Set: 20 x 59 (columns)
-- Train Set: 3960 x 82 (columns)
-   - Target: `sii`
-      - 0 for None
-      - 1 for Mild
-      - 2 for Moderate
-      - and 3 for Severe
+## Create a virtual environment: [[poetry]]
+## EDA
+### Collecting Data
+### Data Analysis
+  - preprocessing
+  - encoding bool + string
+  - normalization / standardization
+  - feature engineer
+## Modeling
+  - machine learning
+  - deep learning
 
-## Problematic Internet Use - Child Mind Institute
-  
-In today’s digital age, problematic internet use among children and adolescents is a growing concern. Better understanding this issue is crucial for addressing mental health problems such as depression and anxiety.
-  
-This [Kaggle competition](https://www.kaggle.com/competitions/child-mind-institute-problematic-internet-use) challenges you to develop a predictive model capable of **analyzing children's physical activity data** throughout physical fitness indicators as proxies to detect early indicators of problematic internet and technology use.
-  
-## Data
-  
-The data used for this competition was provided by the [Healthy Brain Network](https://healthybrainnetwork.org/), a landmark mental health study based in New York City that will help children around the world. In the Healthy Brain Network, families, community leaders, and supporters are partnering with the Child Mind Institute to unlock the secrets of the developing brain. In addition to the generous support provided by the Kaggle team, financial support has been provided by the California Department of Health Care Services (DHCS) as part of the Children and Youth Behavioral Health Initiative (CYBHI).
-  
-The competition data is compiled into **two sources**, `parquet` files containing the accelerometer (actigraphy) series and `csv` files containing the remaining tabular data.
-  
-The majority of measures are missing for most participants. In particular, the target `sii` is missing for a portion of the participants in the training set. You may wish to apply non-supervised learning techniques to this data. The `sii` value is present for all instances in the test set.
-  
-### Target $Y$
-  
-The goal of this competition is to predict from this data a participant's **S**everity **I**mpairment **I**ndex (`sii`), a standard measure of problematic internet use.
-  
-`sii` is derived from this field as described in the data dictionary:
-  - `0` for None,
-  - `1` for Mild,
-  - `2` for Moderate,
-  - and `3` for Severe.
+#### importer un jeu données avec R
 
+![[r.read-table#syntaxe]]
+
+## Erreurs à éviter
+
+- séparateur de colonnes mal spécifié ;
+- séparateur décimal mal spécifié (les variable risquent d’être considérées comme qualitatives) ;
+- tabulations qui remplace un blanc ;
+- nom de ligne ou de colonne comprenant une apostrophe ;
+- encodage du fichier de donnée lorsq’il y a des caractères accentués ;
+- problème dans un guillement non fermé.
+
+## Références
+
+- @hussonPourStatistiqueScience2018
+- @MachineLearningPython
 
 ```{r}
 # Quarto R setup chunck by Julia Silge (https://www.youtube.com/watch?v=5BojM5EciPs)
-library(tidyverse)
-library(tidymodels)
-library(ranger)
+# library(tidyverse)
+# library(tidymodels)
+# library(ranger)
 
-library(knitr)
-knitr::opts_chunk$set(
-    cache = TRUE,
-    cache.lazy = FALSE,
-    warning = FALSE,
-    message =  FALSE,
-    echo = TRUE,
-    dpi = 180,
-    fig.width = 8,
-    fig.height = 5
-)
+# library(knitr)
+# knitr::opts_chunk$set(
+#     cache = TRUE,
+#     cache.lazy = FALSE,
+#     warning = FALSE,
+#     message =  FALSE,
+#     echo = TRUE,
+#     dpi = 180,
+#     fig.width = 8,
+#     fig.height = 5
+# )
 
-theme_set(theme_minimal())
-update_geom_defaults("rect", list(fill = "midnightblue", alpha = 0.8))
-update_geom_defaults("line", list(color = "midnightblue", alpha = 0.8))
-update_geom_defaults("point", list(color = "midnightblue", alpha = 0.8))
-```
+# theme_set(theme_minimal())
+# update_geom_defaults("rect", list(fill = "midnightblue", alpha = 0.8))
+# update_geom_defaults("line", list(color = "midnightblue", alpha = 0.8))
+# update_geom_defaults("point", list(color = "midnightblue", alpha = 0.8))
+# ```
 
-```{r}
-valid <- read_csv("/kaggle/input/child-mind-institute-problematic-internet-use/test.csv")
-train <- read_csv("/kaggle/input/child-mind-institute-problematic-internet-use/train.csv")
-```
+# ```{r}
+# valid <- read_csv("/kaggle/input/child-mind-institute-problematic-internet-use/test.csv")
+# train <- read_csv("/kaggle/input/child-mind-institute-problematic-internet-use/train.csv")
+# ```
 
-```{r}
-train |>
-  count(sii)
-```
+# ```{r}
+# train |>
+#   count(sii)
+# ```
 
-```{r}
-sum(is.na(train$sii))
-```
-```{r}
-# What are different number of features in train and test set?
-# there 23 different feature:
-#   1. 22 Parent-Child Internet Addiction Test (PCIAT) features
-#   2. the target, sii
+# ```{r}
+# sum(is.na(train$sii))
+# ```
+# ```{r}
+# # What are different number of features in train and test set?
+# # there 23 different feature:
+# #   1. 22 Parent-Child Internet Addiction Test (PCIAT) features
+# #   2. the target, sii
 
-# removing PCIAT features
-train_less_pciat <- glimpse(train |>
-  select(!starts_with('PCIAT')))
-```
+# # removing PCIAT features
+# train_less_pciat <- glimpse(train |>
+#   select(!starts_with('PCIAT')))
+# ```
 
-```{r}
-# Vector of categorial features
-categorial_features <- c("FGC-FGC_CU_Zone", "FGC-FGC_GSND_Zone", "FGC-FGC_GSD_Zone",
-                         "FGC-FGC_PU_Zone", "FGC-FGC_SRL_Zone", "FGC-FGC_SRR_Zone",
-                         "FGC-FGC_TL_Zone", "BIA-BIA_Activity_Level_num", "BIA-BIA_Frame_num",
-                         "PreInt_EduHx-computerinternet_hoursday", "sii")
-```
-
-
-```{r}
-# Converting features into factor
-train_factored <- train_less_pciat |>
-  mutate_if(is.character, as.factor) |>
-  mutate(across(categorial_features, as.factor))
-glimpse(train_factored)
-train <- train_factored
-```
+# ```{r}
+# # Vector of categorial features
+# categorial_features <- c("FGC-FGC_CU_Zone", "FGC-FGC_GSND_Zone", "FGC-FGC_GSD_Zone",
+#                          "FGC-FGC_PU_Zone", "FGC-FGC_SRL_Zone", "FGC-FGC_SRR_Zone",
+#                          "FGC-FGC_TL_Zone", "BIA-BIA_Activity_Level_num", "BIA-BIA_Frame_num",
+#                          "PreInt_EduHx-computerinternet_hoursday", "sii")
+# ```
 
 
-```{r}
-train_factored %>%
-  ggplot(aes(sii, "SDS-SDS_Total_T")) +
-  geom_col()
-```
+# ```{r}
+# # Converting features into factor
+# train_factored <- train_less_pciat |>
+#   mutate_if(is.character, as.factor) |>
+#   mutate(across(categorial_features, as.factor))
+# glimpse(train_factored)
+# train <- train_factored
+# ```
 
-### Data visualization
-#### Demographics
-##### Sexe
-##### Age distribution
-#### Target distribution
 
-## Baseline
+# ```{r}
+# train_factored %>%
+#   ggplot(aes(sii, "SDS-SDS_Total_T")) +
+#   geom_col()
+# ```
 
-```{r}
-train_split <- train %>%
-  drop_na(sii) %>%
-  initial_split()
+# ### Data visualization
+# #### Demographics
+# ##### Sexe
+# ##### Age distribution
+# #### Target distribution
 
-training_data <- training(train_split)
-testing_data <- testing(train_split)
-```
+# ## Baseline
 
-```{r}
-# Define the random forest model
-rf_model <- rand_forest(trees = 100, mtry = 3, min_n = 5) %>%
-  set_engine("ranger") %>%
-  set_mode("classification")  # Change to "regression" if predicting continuous values
-```
+# ```{r}
+# train_split <- train %>%
+#   drop_na(sii) %>%
+#   initial_split()
 
-```{r}
-# Create a recipe
-rf_recipe <- recipe(sii ~ ., data = training_data) %>%
-  step_impute_mean(all_numeric_predictors()) %>%       # Mean Imputation
-  step_impute_mode(all_nominal_predictors()) %>%       # Mode Imputation
-  step_normalize(all_numeric_predictors())             # Normalize numeric predictors if needed 
-```
+# training_data <- training(train_split)
+# testing_data <- testing(train_split)
+# ```
 
-```{r}
-# Create a workflow
-rf_workflow <- workflow() %>%
-  add_recipe(rf_recipe) %>%
-  add_model(rf_model)
-```
+# ```{r}
+# # Define the random forest model
+# rf_model <- rand_forest(trees = 100, mtry = 3, min_n = 5) %>%
+#   set_engine("ranger") %>%
+#   set_mode("classification")  # Change to "regression" if predicting continuous values
+# ```
 
-```{r}
-# Fit the model
-rf_fit <- rf_workflow %>%
-  fit(data = training_data)
-```
+# ```{r}
+# # Create a recipe
+# rf_recipe <- recipe(sii ~ ., data = training_data) %>%
+#   step_impute_mean(all_numeric_predictors()) %>%       # Mean Imputation
+#   step_impute_mode(all_nominal_predictors()) %>%       # Mode Imputation
+#   step_normalize(all_numeric_predictors())             # Normalize numeric predictors if needed 
+# ```
 
-```{r}
-# Make predictions
-predictions <- rf_fit %>%
-  predict(new_data = testing_data) %>%
-  bind_cols(testing_data)
-```
+# ```{r}
+# # Create a workflow
+# rf_workflow <- workflow() %>%
+#   add_recipe(rf_recipe) %>%
+#   add_model(rf_model)
+# ```
 
-```{r}
-# Evaluate performance
-metrics <- metrics(predictions, truth = sii, estimate = .pred_class)  # Change .pred_class to the appropriate column name
-print(metrics)
-```
+# ```{r}
+# # Fit the model
+# rf_fit <- rf_workflow %>%
+#   fit(data = training_data)
+# ```
 
-```{r}
-qwk <- kap(predictions, truth = sii, estimate = .pred_class, weighting = "quadratic")
-qwk
-```
+# ```{r}
+# # Make predictions
+# predictions <- rf_fit %>%
+#   predict(new_data = testing_data) %>%
+#   bind_cols(testing_data)
+# ```
 
-## Submission
+# ```{r}
+# # Evaluate performance
+# metrics <- metrics(predictions, truth = sii, estimate = .pred_class)  # Change .pred_class to the appropriate column name
+# print(metrics)
+# ```
 
-```{r}
-## Submission
-# need to bind valid$id + prediction on valid_set
+# ```{r}
+# qwk <- kap(predictions, truth = sii, estimate = .pred_class, weighting = "quadratic")
+# qwk
+# ```
 
-# Preparing valid dataset for prediction
+# ## Submission
 
-valid <- read_csv("/kaggle/input/child-mind-institute-problematic-internet-use/test.csv")
+# ```{r}
+# ## Submission
+# # need to bind valid$id + prediction on valid_set
 
-valid_less_pciat <- glimpse(valid |>
-  select(!starts_with('PCIAT')))
+# # Preparing valid dataset for prediction
 
-categorial_features <- c("FGC-FGC_CU_Zone", "FGC-FGC_GSND_Zone", "FGC-FGC_GSD_Zone",
-                         "FGC-FGC_PU_Zone", "FGC-FGC_SRL_Zone", "FGC-FGC_SRR_Zone",
-                         "FGC-FGC_TL_Zone", "BIA-BIA_Activity_Level_num", "BIA-BIA_Frame_num",
-                         "PreInt_EduHx-computerinternet_hoursday")
+# valid <- read_csv("/kaggle/input/child-mind-institute-problematic-internet-use/test.csv")
 
-valid <- valid_less_pciat |>
-  mutate_if(is.character, as.factor) |>
-  mutate(across(categorial_features, as.factor))
+# valid_less_pciat <- glimpse(valid |>
+#   select(!starts_with('PCIAT')))
 
-# Creating a submission.csv
+# categorial_features <- c("FGC-FGC_CU_Zone", "FGC-FGC_GSND_Zone", "FGC-FGC_GSD_Zone",
+#                          "FGC-FGC_PU_Zone", "FGC-FGC_SRL_Zone", "FGC-FGC_SRR_Zone",
+#                          "FGC-FGC_TL_Zone", "BIA-BIA_Activity_Level_num", "BIA-BIA_Frame_num",
+#                          "PreInt_EduHx-computerinternet_hoursday")
 
-submission <- rf_fit %>%
-  predict(new_data = valid) %>%
-  bind_cols(valid) %>%
-  select(id, .pred_class)  # Replace .pred_class with the name of the prediction column if needed
+# valid <- valid_less_pciat |>
+#   mutate_if(is.character, as.factor) |>
+#   mutate(across(categorial_features, as.factor))
 
-# Rename the prediction column to match the competition's requirements
-colnames(submission) <- c("id", "sii")
+# # Creating a submission.csv
 
-write_csv(submission, "submission.csv")
+# submission <- rf_fit %>%
+#   predict(new_data = valid) %>%
+#   bind_cols(valid) %>%
+#   select(id, .pred_class)  # Replace .pred_class with the name of the prediction column if needed
 
-# 0.225 = top 95%
-```
+# # Rename the prediction column to match the competition's requirements
+# colnames(submission) <- c("id", "sii")
+
+# write_csv(submission, "submission.csv")
+
+# # 0.225 = top 95%
+# ```
+
+# ## References
+
+# ::: {ref}
+
+# :::
