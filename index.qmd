@@ -25,6 +25,26 @@ draft: true
 ## Create a virtual environment: [[poetry]]
 ## EDA
 ### Collecting Data
+
+```{R}
+library(tidyverse)
+library(lubridate)
+
+url <- "https://data.cityofchicago.org/api/views/5neh-572f/rows.csv?accessType=DOWNLOAD&bom=true&format=true"
+
+all_stations <- 
+  # Step 1: Read in the data.
+  read_csv(url) %>% 
+  # Step 2: filter columns and rename stationname
+  dplyr::select(station = stationname, date, rides) %>% 
+  # Step 3: Convert the character date field to a date encoding.
+  # Also, put the data in units of 1K rides
+  mutate(date = mdy(date), rides = rides / 1000) %>% 
+  # Step 4: Summarize the multiple records using the maximum.
+  group_by(date, station) %>% 
+  summarize(rides = max(rides), .groups = "drop")
+```
+
 ### Data Analysis
   - preprocessing
   - encoding bool + string
